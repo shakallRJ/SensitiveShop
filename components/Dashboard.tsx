@@ -76,7 +76,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <div className="bg-amber-50 w-10 h-10 rounded-2xl flex items-center justify-center mb-4">
             <Target size={20} className="text-amber-600" />
           </div>
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Low Stock</p>
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Estoque Baixo</p>
           <p className="text-2xl font-black text-red-600">{lowStock.length}</p>
         </div>
       </div>

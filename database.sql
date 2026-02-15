@@ -2,7 +2,7 @@
 -- 1. Ativar Extensões Necessárias
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 2. Limpar Tabelas Antigas (CUIDADO: Isso apaga os dados atuais)
+-- 2. Limpar Tabelas Antigas
 DROP TABLE IF EXISTS sales;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS customers;
@@ -12,6 +12,9 @@ CREATE TABLE public.customers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   phone TEXT NOT NULL,
+  email TEXT,
+  instagram TEXT,
+  birthday DATE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -31,11 +34,14 @@ CREATE TABLE public.products (
 -- 5. Criar Tabela de Vendas
 CREATE TABLE public.sales (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID DEFAULT gen_random_uuid(), -- Agrupador de múltiplos itens
   customer_id UUID REFERENCES public.customers(id) ON DELETE CASCADE,
   product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
   amount INTEGER NOT NULL DEFAULT 1,
-  value DECIMAL(10,2) NOT NULL,
+  value DECIMAL(10,2) NOT NULL, -- Valor total do item após rateio de desconto
   discount DECIMAL(10,2) DEFAULT 0,
+  discount_description TEXT,
+  payment_method TEXT, -- 'cartao', 'dinheiro', 'pix'
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -48,9 +54,8 @@ ALTER TABLE public.sales DISABLE ROW LEVEL SECURITY;
 INSERT INTO public.products (name, reference_code, purchase_price, price, stock, size, color) VALUES 
 ('Conjunto Noir Renda Chantilly', 'CN-001', 85.00, 189.90, 5, 'M', 'Preto'),
 ('Body Modelador Sensitive Silky', 'BM-002', 110.00, 219.00, 2, 'G', 'Bege'),
-('Sutiã Bojo Invisível Lux', 'SB-003', 42.00, 98.00, 10, '42', 'Branco'),
-('Calcinha Silk Minimalist', 'CS-004', 18.00, 45.00, 20, 'P', 'Nude');
+('Sutiã Bojo Invisível Lux', 'SB-003', 42.00, 98.00, 10, '42', 'Branco');
 
-INSERT INTO public.customers (name, phone) VALUES 
-('Ana Clara Boutique', '11988887777'),
-('Heloisa Lingerie Store', '11977776666');
+INSERT INTO public.customers (name, phone, birthday, instagram) VALUES 
+('Ana Clara Boutique', '11988887777', CURRENT_DATE, '@anaclara_btq'),
+('Heloisa Store', '11977776666', '1995-05-15', '@helo_lingerie');

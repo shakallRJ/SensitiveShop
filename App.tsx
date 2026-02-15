@@ -95,7 +95,7 @@ const App: React.FC = () => {
         <NavItem view={View.Dashboard} icon={Home} label="Início" />
         <NavItem view={View.Sales} icon={ShoppingBag} label="Venda" />
         <NavItem view={View.Inventory} icon={Sparkles} label="Estoque" />
-        <NavItem view={View.Customers} icon={Users} label="Divas" />
+        <NavItem view={View.Customers} icon={Users} label="Clientes" />
       </nav>
     </div>
   );
