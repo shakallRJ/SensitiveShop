@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ShoppingBag, AlertCircle, ArrowUpRight, TrendingUp, Users, Target } from 'lucide-react';
+import { Sparkles, ShoppingBag, AlertCircle, ArrowUpRight, TrendingUp, Users, Target, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Product } from '../types';
 
@@ -81,7 +81,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Alerta de Estoque */}
+      {/* Alerta de Estoque - Clicável */}
       <div className="bg-white border border-gray-100 rounded-[2.5rem] overflow-hidden shadow-sm">
         <div className="px-6 py-5 border-b border-gray-50 flex justify-between items-center">
           <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -92,7 +92,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <div className="divide-y divide-gray-50">
           {lowStock.length > 0 ? (
             lowStock.map(product => (
-              <div key={product.id} className="px-6 py-4 flex justify-between items-center">
+              <button 
+                key={product.id} 
+                onClick={() => onNavigate('inventory')}
+                className="w-full px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors text-left"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
                     <Sparkles size={16} />
@@ -102,10 +106,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     <p className="text-[9px] text-gray-400 font-bold tracking-widest uppercase">{product.reference_code || 'S/ REF'}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-black text-red-600">{product.stock} un</p>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xs font-black text-red-600">{product.stock} un</p>
+                  </div>
+                  <ChevronRight size={14} className="text-gray-200" />
                 </div>
-              </div>
+              </button>
             ))
           ) : (
             <div className="p-12 text-center">

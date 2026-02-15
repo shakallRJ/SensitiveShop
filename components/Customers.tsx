@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, MessageCircle, Plus, Phone, X, UserPlus, AlertCircle, Gift, Mail, Instagram, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Search, MessageCircle, Plus, Phone, X, UserPlus, AlertCircle, Gift, Mail, Instagram, ChevronRight, ShoppingBag, Calendar, ArrowUpRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Customer, Sale } from '../types';
 
@@ -92,7 +92,7 @@ const Customers: React.FC = () => {
           <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Minhas Clientes..."
+            placeholder="Buscar por nome ou celular..."
             className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 pl-14 pr-6 text-sm shadow-sm focus:border-black transition-all font-bold outline-none text-black"
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -132,7 +132,7 @@ const Customers: React.FC = () => {
             return (
               <div key={customer.id} className="p-2 transition-all">
                 <div className={`p-4 flex items-center justify-between rounded-3xl ${selectedCustomerId === customer.id ? 'bg-gray-50 shadow-inner' : 'bg-white hover:bg-gray-50/50'}`}>
-                  <div className="flex items-center gap-4 flex-1" onClick={() => fetchHistory(customer.id)}>
+                  <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => fetchHistory(customer.id)}>
                     <div className={`w-14 h-14 rounded-full flex items-center justify-center font-black text-lg border-4 shadow-sm relative ${isBday ? 'bg-pink-500 text-white border-pink-100 animate-bounce' : 'bg-black text-white border-gray-50'}`}>
                       {customer.name.charAt(0).toUpperCase()}
                       {isBday && <Gift size={14} className="absolute -top-1 -right-1 text-pink-500 bg-white rounded-full p-0.5" />}
@@ -150,41 +150,69 @@ const Customers: React.FC = () => {
                       onClick={() => openWhatsApp(customer.phone, customer.name, isBday)}
                       className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-sm ${isBday ? 'bg-pink-500 text-white' : 'bg-white border border-gray-100 text-black hover:bg-black hover:text-white'}`}
                     >
-                      {isBday ? <Gift size={18}/> : <MessageCircle size={18} />}
+                      {isBday ? <Gift size={20}/> : <MessageCircle size={20} />}
                     </button>
                     <button onClick={() => fetchHistory(customer.id)} className={`w-11 h-11 bg-white border border-gray-100 rounded-xl flex items-center justify-center transition-all ${selectedCustomerId === customer.id ? 'rotate-90 bg-black text-white' : ''}`}>
-                      <ChevronRight size={16} />
+                      <ChevronRight size={18} />
                     </button>
                   </div>
                 </div>
 
-                {/* Aba de Compras (Histórico) */}
+                {/* Aba de Compras (Histórico) - Melhor Visibility */}
                 {selectedCustomerId === customer.id && (
-                  <div className="px-4 pb-4 pt-2 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                  <div className="px-4 pb-6 pt-2 space-y-4 animate-in slide-in-from-top-2 duration-300">
                     <div className="h-px bg-gray-100 mx-4"></div>
-                    <div className="flex gap-3 px-4 py-2">
-                      {customer.email && <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-400 uppercase"><Mail size={10}/> {customer.email}</div>}
-                      {customer.birthday && <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-400 uppercase"><Gift size={10}/> {new Date(customer.birthday).toLocaleDateString('pt-BR')}</div>}
+                    <div className="grid grid-cols-2 gap-2 px-2">
+                      {customer.email && (
+                        <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl">
+                          <Mail size={14} className="text-indigo-400" />
+                          <span className="text-[8px] font-black text-gray-500 uppercase truncate">{customer.email}</span>
+                        </div>
+                      )}
+                      {customer.birthday && (
+                        <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl">
+                          <Calendar size={14} className="text-pink-400" />
+                          <span className="text-[8px] font-black text-gray-500 uppercase">{new Date(customer.birthday).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      )}
                     </div>
                     
-                    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3">
-                      <h4 className="text-[9px] font-black text-black uppercase tracking-widest flex items-center gap-2">
-                        <ShoppingBag size={10} className="text-indigo-400" /> Histórico de Compras
-                      </h4>
+                    <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2">
+                          <ShoppingBag size={14} className="text-indigo-600" /> 
+                          Histórico de Compras
+                        </h4>
+                        <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
+                      </div>
+
                       {customerSales.length > 0 ? (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {customerSales.map(s => (
-                            <div key={s.id} className="flex justify-between items-center text-[10px] bg-gray-50 p-2 rounded-lg">
-                              <div>
-                                <span className="font-black text-black uppercase">{s.product?.name}</span>
-                                <span className="text-gray-400 ml-2">({s.amount}x)</span>
+                            <div key={s.id} className="flex justify-between items-center group">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                                  <ArrowUpRight size={12} className="text-gray-300" />
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-black text-black uppercase truncate max-w-[120px]">{s.product?.name}</p>
+                                  <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">{new Date(s.created_at).toLocaleDateString()}</p>
+                                </div>
                               </div>
-                              <span className="font-black text-emerald-600">R$ {Number(s.value).toFixed(2)}</span>
+                              <div className="text-right">
+                                <p className="text-[10px] font-black text-emerald-600">R$ {Number(s.value).toFixed(2)}</p>
+                                <p className="text-[8px] font-bold text-gray-300 uppercase">{s.amount} unidade(s)</p>
+                              </div>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[9px] text-gray-300 font-bold uppercase text-center py-4 tracking-widest">Nenhuma compra registrada</p>
+                        <div className="py-10 text-center space-y-2">
+                          <div className="bg-gray-50 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 opacity-50">
+                            <ShoppingBag size={14} className="text-gray-300" />
+                          </div>
+                          <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest">Nenhuma compra registrada</p>
+                        </div>
                       )}
                     </div>
                   </div>
