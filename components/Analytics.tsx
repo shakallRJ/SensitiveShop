@@ -9,7 +9,9 @@ import {
   Target, 
   TrendingDown, 
   Activity, 
-  Calendar 
+  Calendar,
+  Zap,
+  CheckCircle2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Sale, Product, Expense } from '../types';
@@ -111,7 +113,6 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
             currentShipCharged += sCharged;
             currentShipCost += sCost;
             
-            // Gerar chave de ordenação cronológica
             const sortKey = filterType === 'total' 
               ? `${saleDate.getFullYear()}-${(saleDate.getMonth() + 1).toString().padStart(2, '0')}`
               : saleDate.getDate().toString().padStart(2, '0');
@@ -140,7 +141,6 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
           });
         }
 
-        // Ordenar as chaves cronologicamente antes de gerar o gráfico
         const evolution = Object.keys(timelineMap)
           .sort((a, b) => a.localeCompare(b))
           .map(key => {
@@ -150,8 +150,6 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
               const d = new Date(parseInt(y), parseInt(m) - 1, 1);
               label = d.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
             } else {
-              // No modo mensal/período, removemos o zero à esquerda do rótulo se desejado, 
-              // mas a chave garantiu a ordem.
               label = parseInt(key).toString();
             }
             return { label, amount: timelineMap[key] };
@@ -187,11 +185,14 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
   const revVariation = totals.prevRevenue > 0 ? ((totals.revenue - totals.prevRevenue) / totals.prevRevenue) * 100 : 0;
   const profitVariation = totals.prevNetProfit > 0 ? ((totals.netProfit - totals.prevNetProfit) / totals.prevNetProfit) * 100 : 0;
   
-  // Lógica de Renderização do Gráfico
   const amounts = chartData.map(d => d.amount);
   const maxProfit = amounts.length > 0 ? Math.max(...amounts, 0) : 100;
   const minProfit = amounts.length > 0 ? Math.min(...amounts, 0) : 0;
   const range = (maxProfit - minProfit) || 1;
+
+  // Cálculo da Meta
+  const goalProgress = Math.min(100, Math.max(0, (totals.netProfit / (idealProfitGoal || 1)) * 100));
+  const isGoalAchieved = totals.netProfit >= idealProfitGoal;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-32">
@@ -328,12 +329,51 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-xl space-y-8">
+      <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-xl space-y-8 relative overflow-hidden">
         <div className="flex justify-between items-center">
           <h3 className="text-[10px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-2">
             <LineChart size={16} className="text-indigo-600" /> Evolução da Lucratividade
           </h3>
           <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Saldo Diário (R$)</span>
+        </div>
+
+        {/* Barra de Meta vs Realidade */}
+        <div className="bg-gray-50/80 p-6 rounded-[2rem] border border-gray-100 space-y-4">
+          <div className="flex justify-between items-end">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Meta vs Realidade</p>
+              <div className="flex items-center gap-2">
+                <span className={`text-lg font-black ${isGoalAchieved ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                  {goalProgress.toFixed(1)}%
+                </span>
+                {isGoalAchieved && <CheckCircle2 size={16} className="text-emerald-500" />}
+              </div>
+            </div>
+            <div className="text-right space-y-1">
+              <p className="text-[8px] font-black text-gray-300 uppercase tracking-[0.2em]">Objetivo de Lucro</p>
+              <p className="text-xs font-black text-black">R$ {idealProfitGoal.toLocaleString('pt-BR')}</p>
+            </div>
+          </div>
+
+          <div className="relative h-3 w-full bg-gray-200/50 rounded-full overflow-hidden">
+            <div 
+              className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-out rounded-full ${
+                isGoalAchieved 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
+                : 'bg-gradient-to-r from-indigo-600 to-purple-500'
+              }`}
+              style={{ width: `${goalProgress}%` }}
+            >
+              <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+            </div>
+          </div>
+
+          {isGoalAchieved && (
+            <div className="flex items-center gap-2 justify-center animate-bounce mt-2">
+              <Zap size={10} className="text-emerald-500 fill-emerald-500" />
+              <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Boutique em Alta Performance</span>
+            </div>
+          )}
         </div>
 
         {chartData.length > 0 ? (
@@ -361,7 +401,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
         ) : (
           <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-gray-100 rounded-[2rem] space-y-2">
              <Activity size={24} className="text-gray-100" />
-             <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest text-center px-10">Aguardando dados de vendas ou custos para gerar evolução</p>
+             <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest text-center px-10">Aguardando dados para gerar evolução</p>
           </div>
         )}
       </div>
