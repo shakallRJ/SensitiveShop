@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingBag, User, Package, DollarSign, Calendar, X, Search, Filter, Trash2, CreditCard, Banknote, QrCode, ReceiptText, Printer, Share2, Truck } from 'lucide-react';
+import { Plus, ShoppingBag, User, Package, DollarSign, Calendar, X, Search, Filter, Trash2, CreditCard, Banknote, QrCode, ReceiptText, Printer, Share2, Truck, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Product, Customer, Sale } from '../types';
 
@@ -16,6 +16,7 @@ const Sales: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterToday, setFilterToday] = useState(false);
 
   const [selectedOrderItems, setSelectedOrderItems] = useState<Sale[] | null>(null);
 
@@ -141,10 +142,14 @@ const Sales: React.FC = () => {
     }
   };
 
-  const filteredSales = sales.filter(s => 
-    s.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.product?.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const filteredSales = sales.filter(s => {
+    const matchesSearch = s.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         s.product?.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDate = filterToday ? s.created_at.split('T')[0] === todayStr : true;
+    return matchesSearch && matchesDate;
+  });
 
   return (
     <div className="space-y-6">
@@ -224,7 +229,6 @@ const Sales: React.FC = () => {
               )}
             </div>
 
-            {/* Nova Seção de Frete */}
             <div className="bg-purple-50 p-5 rounded-[2rem] border border-purple-100 space-y-4">
               <div className="flex items-center gap-2 mb-1">
                 <Truck size={14} className="text-purple-400" />
@@ -239,12 +243,6 @@ const Sales: React.FC = () => {
                   <label className="text-[8px] font-black text-purple-300 uppercase block mb-1">Custo Real (Pago)</label>
                   <input type="text" placeholder="0,00" className="w-full bg-white border border-purple-100 rounded-xl py-3 px-4 text-xs font-bold text-black outline-none" value={formData.shippingCost} onChange={e => setFormData({...formData, shippingCost: e.target.value})} />
                 </div>
-              </div>
-              <div className="flex justify-between items-center px-2">
-                <span className="text-[8px] font-black text-purple-300 uppercase">Resultado Logístico</span>
-                <span className={`text-[10px] font-black ${shippingBalance >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                  {shippingBalance >= 0 ? '+' : ''} R$ {shippingBalance.toFixed(2)}
-                </span>
               </div>
             </div>
 
@@ -280,7 +278,14 @@ const Sales: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Notas Emitidas</h3>
-            <Filter size={14} className="text-gray-200" />
+            
+            <button 
+              onClick={() => setFilterToday(!filterToday)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${filterToday ? 'bg-black text-white border-black' : 'bg-white text-gray-400 border-gray-100'}`}
+            >
+              {filterToday && <Check size={12} />}
+              <span className="text-[9px] font-black uppercase tracking-widest">{filterToday ? 'Hoje' : 'Todas'}</span>
+            </button>
           </div>
           
           <div className="bg-white rounded-[2.5rem] border border-gray-50 shadow-sm overflow-hidden divide-y divide-gray-50">
@@ -309,7 +314,9 @@ const Sales: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="p-20 text-center text-gray-200 text-[10px] font-black uppercase tracking-widest">Nenhuma nota emitida</div>
+              <div className="p-20 text-center text-gray-200 text-[10px] font-black uppercase tracking-widest">
+                {filterToday ? 'Nenhuma nota hoje' : 'Nenhuma nota emitida'}
+              </div>
             )}
           </div>
         </div>

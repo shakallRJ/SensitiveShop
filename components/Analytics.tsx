@@ -80,7 +80,8 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
           compareEndDate = new Date(startDate.getTime() - 1);
           compareStartDate = new Date(compareEndDate.getTime() - diff);
         } else {
-          startDate = new Date(0);
+          startDate = new Date(0); // All time
+          endDate = new Date();
           compareStartDate = new Date(0);
           compareEndDate = new Date(0);
         }
@@ -110,10 +111,12 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
             currentShipCharged += sCharged;
             currentShipCost += sCost;
             
-            const label = filterType === 'total' 
-              ? saleDate.toLocaleString('pt-BR', { month: 'short', year: '2-digit' })
-              : saleDate.getDate().toString();
-            timelineMap[label] = (timelineMap[label] || 0) + profit;
+            // Gerar chave de ordenação cronológica
+            const sortKey = filterType === 'total' 
+              ? `${saleDate.getFullYear()}-${(saleDate.getMonth() + 1).toString().padStart(2, '0')}`
+              : saleDate.getDate().toString().padStart(2, '0');
+              
+            timelineMap[sortKey] = (timelineMap[sortKey] || 0) + profit;
           } else if (saleDate >= compareStartDate && saleDate <= compareEndDate) {
             prevRev += rev;
             prevProfit += profit;
@@ -128,20 +131,31 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
               const amount = Number(exp.amount);
               currentExpenses += amount;
               
-              const label = filterType === 'total' 
-                ? d.toLocaleString('pt-BR', { month: 'short', year: '2-digit' })
-                : d.getDate().toString();
-              timelineMap[label] = (timelineMap[label] || 0) - amount;
+              const sortKey = filterType === 'total' 
+                ? `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`
+                : d.getDate().toString().padStart(2, '0');
+                
+              timelineMap[sortKey] = (timelineMap[sortKey] || 0) - amount;
             }
           });
         }
 
-        const evolution = Object.entries(timelineMap)
-          .sort((a, b) => {
-            if (filterType === 'total') return 0;
-            return Number(a[0]) - Number(b[0]);
-          })
-          .map(([label, profit]) => ({ label, amount: profit }));
+        // Ordenar as chaves cronologicamente antes de gerar o gráfico
+        const evolution = Object.keys(timelineMap)
+          .sort((a, b) => a.localeCompare(b))
+          .map(key => {
+            let label = key;
+            if (filterType === 'total') {
+              const [y, m] = key.split('-');
+              const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+              label = d.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
+            } else {
+              // No modo mensal/período, removemos o zero à esquerda do rótulo se desejado, 
+              // mas a chave garantiu a ordem.
+              label = parseInt(key).toString();
+            }
+            return { label, amount: timelineMap[key] };
+          });
 
         const netRealProfit = (currentRev + currentShipCharged) - (currentCogs + currentShipCost + currentExpenses);
 
@@ -172,9 +186,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
 
   const revVariation = totals.prevRevenue > 0 ? ((totals.revenue - totals.prevRevenue) / totals.prevRevenue) * 100 : 0;
   const profitVariation = totals.prevNetProfit > 0 ? ((totals.netProfit - totals.prevNetProfit) / totals.prevNetProfit) * 100 : 0;
-  const goalProgress = Math.min(100, (totals.netProfit / (idealProfitGoal || 1)) * 100);
-  const gapToGoal = Math.max(0, idealProfitGoal - totals.netProfit);
-
+  
   // Lógica de Renderização do Gráfico
   const amounts = chartData.map(d => d.amount);
   const maxProfit = amounts.length > 0 ? Math.max(...amounts, 0) : 100;
@@ -316,7 +328,6 @@ const Analytics: React.FC<AnalyticsProps> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Gráfico de Evolução no Rodapé com Cores Corrigidas */}
       <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-xl space-y-8">
         <div className="flex justify-between items-center">
           <h3 className="text-[10px] font-black text-black uppercase tracking-[0.3em] flex items-center gap-2">

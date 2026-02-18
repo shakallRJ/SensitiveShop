@@ -103,7 +103,7 @@ const App: React.FC = () => {
         <NavItem view={View.Dashboard} icon={LayoutDashboard} label="Início" />
         <NavItem view={View.Sales} icon={ShoppingBag} label="Venda" />
         <NavItem view={View.Expenses} icon={Wallet} label="Custos" />
-        <NavItem view={View.Inventory} icon={Gem} label="Peças" />
+        <NavItem view={View.Inventory} icon={Gem} label="Estoque" />
         <NavItem view={View.Customers} icon={UserRound} label="Clientes" />
       </nav>
     </div>
