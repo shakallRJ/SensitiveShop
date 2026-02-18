@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ShoppingBag, AlertCircle, ArrowUpRight, TrendingUp, Users, Target, ChevronRight, Calendar } from 'lucide-react';
+import { Sparkles, ShoppingBag, AlertCircle, ArrowUpRight, TrendingUp, Heart, Ribbon, ChevronRight, Flower } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Product } from '../types';
 
@@ -50,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
         const sortedMonths = Object.entries(monthsMap)
           .map(([month, total]) => ({ month, total }))
-          .slice(-3); // Pega os últimos 3 meses
+          .slice(-3);
 
         setMonthlyData(sortedMonths);
         setStats({ revenue: currentTotal, salesCount: sales.filter(s => new Date(s.created_at).getMonth() === currentMonth).length, previousRevenue: prevTotal });
@@ -71,17 +71,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   return (
     <div className="space-y-6">
-      {/* Revenue Card Multi-Mês */}
-      <div className="bg-gray-950 rounded-[2.5rem] p-7 text-white shadow-2xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 p-8 opacity-5">
-          <TrendingUp size={150} />
+      {/* Revenue Card com Glow Suave */}
+      <div className="bg-gray-950 rounded-[2.5rem] p-7 text-white shadow-2xl relative overflow-hidden border border-white/5">
+        <div className="absolute -right-10 -top-10 p-8 opacity-10 blur-2xl bg-purple-500 w-40 h-40 rounded-full"></div>
+        <div className="absolute right-6 top-6 opacity-20">
+          <Sparkles size={40} className="text-purple-300" />
         </div>
         
         <div className="relative z-10 space-y-6">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50">Faturamento Mensal</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50">Fluxo da Boutique</span>
             <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black ${growth >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-              {growth >= 0 ? '+' : ''}{growth.toFixed(1)}% vs anterior
+              {growth >= 0 ? '+' : ''}{growth.toFixed(1)}% performance
             </div>
           </div>
 
@@ -92,7 +93,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Saldo Atual {new Date().toLocaleString('pt-BR', { month: 'long' })}</p>
           </div>
 
-          <div className="h-px bg-white/10 w-full"></div>
+          <div className="h-px bg-white/10 w-full border-t border-dashed border-white/20"></div>
 
           <div className="grid grid-cols-3 gap-4">
             {monthlyData.map((data, i) => (
@@ -115,28 +116,28 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm">
-          <div className="bg-indigo-50 w-10 h-10 rounded-2xl flex items-center justify-center mb-4">
-            <ShoppingBag size={20} className="text-indigo-600" />
+          <div className="bg-pink-50 w-10 h-10 rounded-2xl flex items-center justify-center mb-4">
+            <Ribbon size={20} className="text-pink-400" />
           </div>
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Vendas (Mês)</p>
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Desejos (Vendas)</p>
           <p className="text-2xl font-black text-gray-900">{stats.salesCount}</p>
         </div>
 
         <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm">
-          <div className="bg-amber-50 w-10 h-10 rounded-2xl flex items-center justify-center mb-4">
-            <Target size={20} className="text-amber-600" />
+          <div className="bg-purple-50 w-10 h-10 rounded-2xl flex items-center justify-center mb-4">
+            <Flower size={20} className="text-purple-400" />
           </div>
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Reposição</p>
           <p className="text-2xl font-black text-red-600">{lowStock.length}</p>
         </div>
       </div>
 
-      {/* Alerta de Estoque */}
+      {/* Alerta de Estoque com Visual de Peça */}
       <div className="bg-white border border-gray-100 rounded-[2.5rem] overflow-hidden shadow-sm">
-        <div className="px-6 py-5 border-b border-gray-50 flex justify-between items-center">
+        <div className="px-6 py-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
           <h2 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em] flex items-center gap-2">
-            <AlertCircle size={14} className="text-red-400" />
-            Alertas de Loja
+            <AlertCircle size={14} className="text-amber-400" />
+            Curadoria Urgente
           </h2>
         </div>
         <div className="divide-y divide-gray-50">
@@ -148,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 className="w-full px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors text-left"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-300">
                     <Sparkles size={16} />
                   </div>
                   <div>
@@ -166,7 +167,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             ))
           ) : (
             <div className="p-12 text-center">
-              <p className="text-xs text-gray-300 font-black uppercase tracking-widest">Estoque Impecável ✨</p>
+              <p className="text-xs text-gray-200 font-black uppercase tracking-widest">Estoque Impecável ✨</p>
             </div>
           )}
         </div>

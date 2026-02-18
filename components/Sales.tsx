@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingBag, User, Package, DollarSign, Calendar, X, Search, Filter, Trash2, CreditCard, Banknote, QrCode, ReceiptText, Printer, Share2 } from 'lucide-react';
+import { Plus, ShoppingBag, User, Package, DollarSign, Calendar, X, Search, Filter, Trash2, CreditCard, Banknote, QrCode, ReceiptText, Printer, Share2, Truck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Product, Customer, Sale } from '../types';
 
@@ -17,10 +17,8 @@ const Sales: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Receipt Modal State
   const [selectedOrderItems, setSelectedOrderItems] = useState<Sale[] | null>(null);
 
-  // Estado do Carrinho
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedProductQty, setSelectedProductQty] = useState(1);
@@ -30,6 +28,8 @@ const Sales: React.FC = () => {
     discount: '0',
     discountDescription: '',
     paymentMethod: 'pix',
+    shippingCharged: '0',
+    shippingCost: '0',
     date: new Date().toISOString().split('T')[0]
   });
 
@@ -80,7 +80,10 @@ const Sales: React.FC = () => {
   };
 
   const cartTotal = cart.reduce((acc, item) => acc + (item.product.price * item.amount), 0);
-  const finalTotal = Math.max(0, cartTotal - parseFloat(formData.discount.replace(',', '.')) || 0);
+  const shippingCharge = parseFloat(formData.shippingCharged.replace(',', '.')) || 0;
+  const shippingCost = parseFloat(formData.shippingCost.replace(',', '.')) || 0;
+  const finalTotal = Math.max(0, cartTotal + shippingCharge - (parseFloat(formData.discount.replace(',', '.')) || 0));
+  const shippingBalance = shippingCharge - shippingCost;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +108,8 @@ const Sales: React.FC = () => {
         discount: discountPerItem,
         discount_description: formData.discountDescription,
         payment_method: formData.paymentMethod,
+        shipping_charged: shippingCharge / cart.length,
+        shipping_cost: shippingCost / cart.length,
         created_at: formData.date
       }));
 
@@ -122,10 +127,12 @@ const Sales: React.FC = () => {
         discount: '0',
         discountDescription: '',
         paymentMethod: 'pix',
+        shippingCharged: '0',
+        shippingCost: '0',
         date: new Date().toISOString().split('T')[0]
       });
       fetchData();
-      alert('Pedido realizado com sucesso! ✨');
+      alert('Nota emitida com sucesso! ✨');
     } catch (err) {
       console.error(err);
       alert('Erro ao processar venda.');
@@ -141,7 +148,6 @@ const Sales: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header com Botão Alinhado */}
       <div className="flex items-stretch gap-3">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
@@ -178,15 +184,15 @@ const Sales: React.FC = () => {
             </div>
 
             <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100 space-y-3">
-              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Adicionar Peças</label>
+              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Carrinho</label>
               <div className="flex gap-2">
                 <select 
                   className="flex-1 bg-white border border-gray-200 rounded-xl py-3 px-4 text-xs font-bold text-black outline-none"
                   value={selectedProductId}
                   onChange={e => setSelectedProductId(e.target.value)}
                 >
-                  <option value="">Escolher Item</option>
-                  {products.map(p => <option key={p.id} value={p.id} disabled={p.stock <= 0}>{p.name} ({p.stock} un)</option>)}
+                  <option value="">Peça</option>
+                  {products.map(p => <option key={p.id} value={p.id} disabled={p.stock <= 0}>{p.name}</option>)}
                 </select>
                 <input 
                   type="number" 
@@ -198,27 +204,48 @@ const Sales: React.FC = () => {
                 <button 
                   type="button"
                   onClick={addToCart}
-                  className="bg-black text-white p-3 rounded-xl hover:scale-105 transition-transform"
+                  className="bg-black text-white p-3 rounded-xl"
                 >
                   <Plus size={18} />
                 </button>
               </div>
 
               {cart.length > 0 && (
-                <div className="mt-4 space-y-2 max-h-40 overflow-y-auto no-scrollbar">
+                <div className="space-y-2 mt-2">
                   {cart.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm animate-in fade-in scale-in">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-black text-black uppercase truncate">{item.product.name}</p>
-                        <p className="text-[9px] text-gray-400 font-bold">{item.amount}x R$ {item.product.price.toFixed(2)}</p>
-                      </div>
-                      <button type="button" onClick={() => removeFromCart(index)} className="text-red-300 hover:text-red-500 transition-colors">
+                    <div key={index} className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100">
+                      <p className="text-[10px] font-black uppercase text-black truncate flex-1">{item.product.name}</p>
+                      <button type="button" onClick={() => removeFromCart(index)} className="text-red-300 ml-2">
                         <Trash2 size={14} />
                       </button>
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Nova Seção de Frete */}
+            <div className="bg-purple-50 p-5 rounded-[2rem] border border-purple-100 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Truck size={14} className="text-purple-400" />
+                <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Logística & Frete</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[8px] font-black text-purple-300 uppercase block mb-1">Cobrado da Cliente</label>
+                  <input type="text" placeholder="0,00" className="w-full bg-white border border-purple-100 rounded-xl py-3 px-4 text-xs font-bold text-black outline-none" value={formData.shippingCharged} onChange={e => setFormData({...formData, shippingCharged: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-[8px] font-black text-purple-300 uppercase block mb-1">Custo Real (Pago)</label>
+                  <input type="text" placeholder="0,00" className="w-full bg-white border border-purple-100 rounded-xl py-3 px-4 text-xs font-bold text-black outline-none" value={formData.shippingCost} onChange={e => setFormData({...formData, shippingCost: e.target.value})} />
+                </div>
+              </div>
+              <div className="flex justify-between items-center px-2">
+                <span className="text-[8px] font-black text-purple-300 uppercase">Resultado Logístico</span>
+                <span className={`text-[10px] font-black ${shippingBalance >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                  {shippingBalance >= 0 ? '+' : ''} R$ {shippingBalance.toFixed(2)}
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -236,17 +263,9 @@ const Sales: React.FC = () => {
               </div>
             </div>
 
-            <input 
-              type="text" 
-              placeholder="Motivo do desconto (Ex: Campanha Maio)" 
-              className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none"
-              value={formData.discountDescription}
-              onChange={e => setFormData({...formData, discountDescription: e.target.value})}
-            />
-
             <div className="bg-gray-950 p-7 rounded-[2rem] text-white flex justify-between items-center shadow-2xl">
               <div>
-                <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.3em]">Total Nota</span>
+                <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.3em]">Total Geral</span>
                 <p className="text-2xl font-black">R$ {finalTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
               <ShoppingBag size={24} className="text-white/20" />
@@ -255,12 +274,12 @@ const Sales: React.FC = () => {
             <input type="date" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} required />
           </div>
 
-          <button type="submit" className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all">Confirmar Nota</button>
+          <button type="submit" className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all">Finalizar Nota</button>
         </form>
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Histórico de Vendas</h3>
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Notas Emitidas</h3>
             <Filter size={14} className="text-gray-200" />
           </div>
           
@@ -281,11 +300,10 @@ const Sales: React.FC = () => {
                     <div>
                       <p className="text-xs font-black text-black uppercase tracking-tight">{sale.customer?.name}</p>
                       <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{sale.product?.name} ({sale.amount}x)</p>
-                      <span className="text-[7px] font-black bg-gray-100 px-1.5 py-0.5 rounded text-gray-400 uppercase">{sale.payment_method}</span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-black text-black">R$ {Number(sale.value).toFixed(2)}</p>
+                    <p className="text-xs font-black text-black">R$ {Number(sale.value + (sale.shipping_charged || 0)).toFixed(2)}</p>
                     <p className="text-[8px] text-gray-300 font-bold uppercase mt-1">{new Date(sale.created_at).toLocaleDateString('pt-BR')}</p>
                   </div>
                 </div>
@@ -297,16 +315,14 @@ const Sales: React.FC = () => {
         </div>
       )}
 
-      {/* POP-UP NOTA FISCAL */}
       {selectedOrderItems && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
-            {/* Design de Papel/Nota */}
             <div className="border-t-8 border-black absolute top-0 left-0 right-0"></div>
             
             <button 
               onClick={() => setSelectedOrderItems(null)}
-              className="absolute right-6 top-6 w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-black hover:text-white transition-all z-10"
+              className="absolute right-6 top-6 w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400"
             >
               <X size={18} />
             </button>
@@ -315,37 +331,26 @@ const Sales: React.FC = () => {
               <div className="text-center space-y-2">
                 <h2 className="text-4xl font-serif-brand font-black text-black">S.</h2>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.5em]">Sensitive Shop</p>
-                <div className="flex items-center justify-center gap-2 text-[8px] font-black text-gray-300 uppercase tracking-widest pt-2">
-                  <div className="h-px w-8 bg-gray-100"></div>
-                  <span>Nota de Venda</span>
-                  <div className="h-px w-8 bg-gray-100"></div>
-                </div>
               </div>
 
               <div className="space-y-1">
-                <div className="flex justify-between items-end">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Cliente</p>
-                  <p className="text-[9px] font-bold text-gray-300">{new Date(selectedOrderItems[0].created_at).toLocaleString('pt-BR')}</p>
-                </div>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Cliente</p>
                 <p className="text-sm font-black text-black uppercase tracking-tight">{selectedOrderItems[0].customer?.name}</p>
               </div>
 
-              {/* Tabela de Itens */}
               <div className="space-y-4">
                 <div className="border-y border-dashed border-gray-200 py-3 grid grid-cols-12 text-[8px] font-black text-gray-400 uppercase tracking-widest">
-                  <span className="col-span-6">Item</span>
-                  <span className="col-span-2 text-center">Qt</span>
+                  <span className="col-span-8">Item</span>
                   <span className="col-span-4 text-right">Subtotal</span>
                 </div>
                 
                 <div className="space-y-3">
                   {selectedOrderItems.map((item, idx) => (
                     <div key={idx} className="grid grid-cols-12 items-start text-[10px] font-bold text-black uppercase">
-                      <div className="col-span-6 leading-tight">
+                      <div className="col-span-8 leading-tight">
                         {item.product?.name}
-                        <p className="text-[7px] text-gray-400 font-bold mt-0.5">Ref: {item.product?.reference_code || '---'}</p>
+                        <p className="text-[7px] text-gray-400 font-bold mt-0.5">Qt: {item.amount}</p>
                       </div>
-                      <span className="col-span-2 text-center font-black">{item.amount}</span>
                       <span className="col-span-4 text-right font-black">R$ {Number(item.value).toFixed(2)}</span>
                     </div>
                   ))}
@@ -353,50 +358,32 @@ const Sales: React.FC = () => {
 
                 <div className="border-t border-dashed border-gray-200 pt-4 space-y-2">
                   <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    <span>Método</span>
-                    <span className="text-black font-black">{selectedOrderItems[0].payment_method}</span>
+                    <span>Frete Cobrado</span>
+                    <span className="text-black font-black">R$ {(selectedOrderItems.reduce((acc, i) => acc + (i.shipping_charged || 0), 0)).toFixed(2)}</span>
                   </div>
                   {selectedOrderItems[0].discount > 0 && (
                     <div className="flex justify-between items-center text-[10px] font-bold text-red-400 uppercase tracking-widest">
-                      <span>Desconto Total</span>
+                      <span>Desconto</span>
                       <span className="font-black">- R$ {(selectedOrderItems.reduce((acc, i) => acc + (i.discount || 0), 0)).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center pt-2">
                     <span className="text-xs font-black text-black uppercase tracking-widest">Total Geral</span>
                     <span className="text-xl font-black text-black">
-                      R$ {selectedOrderItems.reduce((acc, i) => acc + Number(i.value), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {selectedOrderItems.reduce((acc, i) => acc + Number(i.value) + Number(i.shipping_charged || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="text-center pt-4 space-y-4">
-                <p className="text-[8px] font-bold text-gray-300 uppercase leading-relaxed tracking-widest">
-                  Obrigado por escolher a Sensitive Shop.<br/>Sua beleza, nossa essência.
-                </p>
-                <div className="flex gap-2">
-                   <button 
-                    onClick={() => setSelectedOrderItems(null)}
-                    className="flex-1 bg-gray-50 text-gray-400 py-4 rounded-xl font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all"
-                  >
-                    Fechar
-                  </button>
-                  <button 
-                    onClick={() => window.print()}
-                    className="flex-1 bg-black text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
-                  >
-                    <Share2 size={12} /> Compartilhar
-                  </button>
-                </div>
+              <div className="text-center pt-4">
+                <button 
+                  onClick={() => setSelectedOrderItems(null)}
+                  className="w-full bg-black text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest"
+                >
+                  Fechar Nota
+                </button>
               </div>
-            </div>
-            
-            {/* Efeito de Serrilhado no fundo (opcional visual) */}
-            <div className="absolute -bottom-1 left-0 right-0 flex justify-between px-1 opacity-10">
-              {[...Array(20)].map((_, i) => (
-                <div key={i} className="w-4 h-4 bg-gray-200 transform rotate-45 -mb-2"></div>
-              ))}
             </div>
           </div>
         </div>

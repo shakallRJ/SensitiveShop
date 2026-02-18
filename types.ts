@@ -8,6 +8,8 @@ export interface Product {
   stock: number;
   size?: string;
   color?: string;
+  purchase_date?: string;
+  expected_days?: number;
   created_at: string;
 }
 
@@ -21,6 +23,15 @@ export interface Customer {
   created_at: string;
 }
 
+export interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+  created_at: string;
+}
+
 export interface Sale {
   id: string;
   order_id: string;
@@ -31,6 +42,8 @@ export interface Sale {
   discount: number;
   discount_description?: string;
   payment_method: string;
+  shipping_charged: number;
+  shipping_cost: number;
   created_at: string;
   customer?: Customer;
   product?: Product;

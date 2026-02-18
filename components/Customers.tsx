@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, MessageCircle, Plus, Phone, X, UserPlus, AlertCircle, Gift, Mail, Instagram, ChevronRight, ShoppingBag, Calendar, ArrowUpRight } from 'lucide-react';
+import { Search, MessageCircle, Plus, Phone, X, UserPlus, AlertCircle, Gift, Mail, Instagram, ChevronRight, ReceiptText, Calendar, ArrowUpRight, TrendingUp, History, Edit2, DollarSign, Clock, Crown, Star, Gem } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Customer, Sale } from '../types';
 
@@ -12,6 +12,9 @@ const Customers: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [customerSales, setCustomerSales] = useState<Sale[]>([]);
+  
+  // Estado para Edição
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [newCustomer, setNewCustomer] = useState({
     name: '',
@@ -46,26 +49,64 @@ const Customers: React.FC = () => {
     setSelectedCustomerId(id);
   };
 
-  const handleAddCustomer = async (e: React.FormEvent) => {
+  const handleSaveCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('customers').insert([{
+      const payload = {
         name: newCustomer.name.trim(),
         phone: newCustomer.phone.replace(/\D/g, ''),
         email: newCustomer.email.trim(),
-        instagram: newCustomer.instagram.trim(),
+        instagram: newCustomer.instagram.trim().replace('@', ''),
         birthday: newCustomer.birthday || null
-      }]);
-      if (error) throw error;
+      };
+
+      if (editingId) {
+        const { error } = await supabase.from('customers').update(payload).eq('id', editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('customers').insert([payload]);
+        if (error) throw error;
+      }
+
       setNewCustomer({ name: '', phone: '', email: '', instagram: '', birthday: '' });
       setShowForm(false);
+      setEditingId(null);
       fetchCustomers();
     } catch (e) {
-      alert('Erro ao cadastrar cliente.');
+      alert('Erro ao salvar cliente.');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const startEdit = (customer: Customer) => {
+    setEditingId(customer.id);
+    setNewCustomer({
+      name: customer.name,
+      phone: customer.phone,
+      email: customer.email || '',
+      instagram: customer.instagram || '',
+      birthday: customer.birthday || ''
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const calculateMetrics = (sales: Sale[]) => {
+    const totalValue = sales.reduce((acc, s) => acc + Number(s.value), 0);
+    const uniqueOrders = new Set(sales.map(s => s.order_id)).size;
+    const avgTicket = uniqueOrders > 0 ? totalValue / uniqueOrders : 0;
+    
+    let lastPurchaseDate = null;
+    let daysInactive = 0;
+    
+    if (sales.length > 0) {
+      lastPurchaseDate = new Date(sales[0].created_at);
+      daysInactive = Math.floor((new Date().getTime() - lastPurchaseDate.getTime()) / (1000 * 3600 * 24));
+    }
+
+    return { totalValue, frequency: uniqueOrders, avgTicket, daysInactive, lastPurchaseDate };
   };
 
   const openWhatsApp = (phone: string, name: string, isBirthday: boolean) => {
@@ -86,7 +127,7 @@ const Customers: React.FC = () => {
   const filtered = customers.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -98,15 +139,21 @@ const Customers: React.FC = () => {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <button onClick={() => setShowForm(!showForm)} className={`w-14 h-14 rounded-2xl shadow-xl transition-all flex items-center justify-center shrink-0 ${showForm ? 'bg-white text-black border border-gray-100' : 'bg-black text-white'}`}>
+        <button 
+          onClick={() => {
+            setShowForm(!showForm);
+            if (showForm) setEditingId(null);
+          }} 
+          className={`w-14 h-14 rounded-2xl shadow-xl transition-all flex items-center justify-center shrink-0 ${showForm ? 'bg-white text-black border border-gray-100' : 'bg-black text-white'}`}
+        >
           {showForm ? <X size={24} /> : <Plus size={24} />}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleAddCustomer} className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-2xl space-y-4 animate-in slide-in-from-top-4">
+        <form onSubmit={handleSaveCustomer} className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-2xl space-y-4 animate-in slide-in-from-top-4">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-black text-black uppercase tracking-[0.3em]">Novo Cliente</h3>
+            <h3 className="text-xs font-black text-black uppercase tracking-[0.3em]">{editingId ? 'Editar Cliente' : 'Novo Cliente'}</h3>
             <UserPlus size={16} className="text-gray-300" />
           </div>
           <input type="text" placeholder="Nome Completo" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none" value={newCustomer.name} onChange={e => setNewCustomer({...newCustomer, name: e.target.value})} required />
@@ -117,9 +164,11 @@ const Customers: React.FC = () => {
           <input type="email" placeholder="E-mail" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none" value={newCustomer.email} onChange={e => setNewCustomer({...newCustomer, email: e.target.value})} />
           <div className="relative">
             <Instagram size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-pink-400" />
-            <input type="text" placeholder="@instagram" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 pl-12 pr-6 text-xs font-bold text-black outline-none" value={newCustomer.instagram} onChange={e => setNewCustomer({...newCustomer, instagram: e.target.value})} />
+            <input type="text" placeholder="instagram (sem @)" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 pl-12 pr-6 text-xs font-bold text-black outline-none" value={newCustomer.instagram} onChange={e => setNewCustomer({...newCustomer, instagram: e.target.value})} />
           </div>
-          <button type="submit" disabled={isSaving} className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl">{isSaving ? 'Gravando...' : 'Confirmar Cliente'}</button>
+          <button type="submit" disabled={isSaving} className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl active:scale-[0.98] transition-all">
+            {isSaving ? 'Gravando...' : editingId ? 'Salvar Alterações' : 'Confirmar Cliente'}
+          </button>
         </form>
       )}
 
@@ -140,12 +189,18 @@ const Customers: React.FC = () => {
                     <div className="min-w-0">
                       <p className="text-xs font-black text-black uppercase tracking-tight">{customer.name}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[8px] font-bold text-gray-400 tracking-widest uppercase">{customer.instagram || 'Sem IG'}</span>
+                        <span className="text-[8px] font-bold text-gray-400 tracking-widest uppercase">{customer.instagram ? `@${customer.instagram}` : 'Sem IG'}</span>
                         {isBday && <span className="text-[8px] font-black text-pink-500 uppercase tracking-widest">Aniversário Hoje! ✨</span>}
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <button 
+                      onClick={() => startEdit(customer)}
+                      className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-gray-200 hover:text-black transition-all"
+                    >
+                      <Edit2 size={16} />
+                    </button>
                     <button 
                       onClick={() => openWhatsApp(customer.phone, customer.name, isBday)}
                       className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-sm ${isBday ? 'bg-pink-500 text-white' : 'bg-white border border-gray-100 text-black hover:bg-black hover:text-white'}`}
@@ -160,29 +215,56 @@ const Customers: React.FC = () => {
 
                 {selectedCustomerId === customer.id && (
                   <div className="px-4 pb-6 pt-2 space-y-4 animate-in slide-in-from-top-2 duration-300">
-                    <div className="h-px bg-gray-100 mx-4"></div>
-                    <div className="grid grid-cols-2 gap-2 px-2">
-                      {customer.email && (
-                        <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                          <Mail size={16} className="text-indigo-600" />
-                          <span className="text-[8px] font-black text-gray-600 uppercase truncate">{customer.email}</span>
-                        </div>
-                      )}
-                      {customer.birthday && (
-                        <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                          <Calendar size={16} className="text-pink-600" />
-                          <span className="text-[8px] font-black text-gray-600 uppercase">{new Date(customer.birthday).toLocaleDateString('pt-BR')}</span>
-                        </div>
-                      )}
-                    </div>
+                    <div className="h-px bg-gray-100 mx-4 border-t border-dashed border-gray-200"></div>
                     
+                    {/* Dashboard CRM da Cliente */}
+                    {(() => {
+                      const metrics = calculateMetrics(customerSales);
+                      return (
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-sm text-center">
+                            <Gem size={12} className="text-purple-300 mx-auto mb-1 opacity-50" />
+                            <p className="text-[8px] font-black text-gray-300 uppercase mb-1">Lifetime Value</p>
+                            <p className="text-sm font-black text-black">R$ {metrics.totalValue.toFixed(0)}</p>
+                          </div>
+                          <div className="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-sm text-center">
+                            <Star size={12} className="text-amber-300 mx-auto mb-1 opacity-50" />
+                            <p className="text-[8px] font-black text-gray-300 uppercase mb-1">Ticket Médio</p>
+                            <p className="text-sm font-black text-black">R$ {metrics.avgTicket.toFixed(0)}</p>
+                          </div>
+                          <div className="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-sm text-center">
+                            <History size={12} className="text-emerald-300 mx-auto mb-1 opacity-50" />
+                            <p className="text-[8px] font-black text-gray-300 uppercase mb-1">Frequência</p>
+                            <p className="text-sm font-black text-black">{metrics.frequency}x</p>
+                          </div>
+                          
+                          {/* Alerta de Inatividade */}
+                          <div className={`col-span-3 p-3 rounded-2xl border flex items-center justify-between px-5 ${
+                            metrics.daysInactive > 60 ? 'bg-red-50 border-red-100 text-red-500' :
+                            metrics.daysInactive > 30 ? 'bg-amber-50 border-amber-100 text-amber-600' :
+                            'bg-emerald-50 border-emerald-100 text-emerald-600'
+                          }`}>
+                            <div className="flex items-center gap-2">
+                              <Clock size={14} />
+                              <span className="text-[9px] font-black uppercase tracking-widest">
+                                {metrics.daysInactive === 0 ? 'Comprou hoje!' : `Última compra há ${metrics.daysInactive} dias`}
+                              </span>
+                            </div>
+                            <span className="text-[8px] font-black uppercase bg-white/50 px-3 py-1 rounded-full">
+                              {metrics.daysInactive > 60 ? 'Risco de Perda' : metrics.daysInactive > 30 ? 'Atenção' : 'Fiel / Ativa'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xl space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2">
-                          <ShoppingBag size={16} className="text-indigo-600" /> 
-                          Histórico de Compras
+                          <Crown size={16} className="text-amber-500" /> 
+                          Pedidos Realizados
                         </h4>
-                        <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
+                        <div className="h-2 w-2 rounded-full bg-purple-500"></div>
                       </div>
 
                       {customerSales.length > 0 ? (
@@ -208,7 +290,7 @@ const Customers: React.FC = () => {
                       ) : (
                         <div className="py-10 text-center space-y-2">
                           <div className="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 border border-gray-100">
-                            <ShoppingBag size={18} className="text-gray-300" />
+                            <ReceiptText size={18} className="text-gray-300" />
                           </div>
                           <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest">Nenhuma compra registrada</p>
                         </div>
