@@ -98,7 +98,7 @@ const Customers: React.FC = () => {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <button onClick={() => setShowForm(!showForm)} className={`w-14 h-14 rounded-2xl shadow-xl transition-all flex items-center justify-center ${showForm ? 'bg-white text-black border border-gray-100' : 'bg-black text-white'}`}>
+        <button onClick={() => setShowForm(!showForm)} className={`w-14 h-14 rounded-2xl shadow-xl transition-all flex items-center justify-center shrink-0 ${showForm ? 'bg-white text-black border border-gray-100' : 'bg-black text-white'}`}>
           {showForm ? <X size={24} /> : <Plus size={24} />}
         </button>
       </div>
@@ -158,21 +158,20 @@ const Customers: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Aba de Compras (Histórico) - Melhor Visibility */}
                 {selectedCustomerId === customer.id && (
                   <div className="px-4 pb-6 pt-2 space-y-4 animate-in slide-in-from-top-2 duration-300">
                     <div className="h-px bg-gray-100 mx-4"></div>
                     <div className="grid grid-cols-2 gap-2 px-2">
                       {customer.email && (
-                        <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl">
-                          <Mail size={14} className="text-indigo-400" />
-                          <span className="text-[8px] font-black text-gray-500 uppercase truncate">{customer.email}</span>
+                        <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                          <Mail size={16} className="text-indigo-600" />
+                          <span className="text-[8px] font-black text-gray-600 uppercase truncate">{customer.email}</span>
                         </div>
                       )}
                       {customer.birthday && (
-                        <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl">
-                          <Calendar size={14} className="text-pink-400" />
-                          <span className="text-[8px] font-black text-gray-500 uppercase">{new Date(customer.birthday).toLocaleDateString('pt-BR')}</span>
+                        <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                          <Calendar size={16} className="text-pink-600" />
+                          <span className="text-[8px] font-black text-gray-600 uppercase">{new Date(customer.birthday).toLocaleDateString('pt-BR')}</span>
                         </div>
                       )}
                     </div>
@@ -180,7 +179,7 @@ const Customers: React.FC = () => {
                     <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xl space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="text-[10px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2">
-                          <ShoppingBag size={14} className="text-indigo-600" /> 
+                          <ShoppingBag size={16} className="text-indigo-600" /> 
                           Histórico de Compras
                         </h4>
                         <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
@@ -189,10 +188,10 @@ const Customers: React.FC = () => {
                       {customerSales.length > 0 ? (
                         <div className="space-y-3">
                           {customerSales.map(s => (
-                            <div key={s.id} className="flex justify-between items-center group">
+                            <div key={s.id} className="flex justify-between items-center group bg-gray-50/50 p-3 rounded-2xl border border-gray-50">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                                  <ArrowUpRight size={12} className="text-gray-300" />
+                                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                                  <ArrowUpRight size={16} className="text-emerald-500" />
                                 </div>
                                 <div>
                                   <p className="text-[10px] font-black text-black uppercase truncate max-w-[120px]">{s.product?.name}</p>
@@ -201,15 +200,15 @@ const Customers: React.FC = () => {
                               </div>
                               <div className="text-right">
                                 <p className="text-[10px] font-black text-emerald-600">R$ {Number(s.value).toFixed(2)}</p>
-                                <p className="text-[8px] font-bold text-gray-300 uppercase">{s.amount} unidade(s)</p>
+                                <p className="text-[8px] font-bold text-gray-300 uppercase">{s.amount} un.</p>
                               </div>
                             </div>
                           ))}
                         </div>
                       ) : (
                         <div className="py-10 text-center space-y-2">
-                          <div className="bg-gray-50 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 opacity-50">
-                            <ShoppingBag size={14} className="text-gray-300" />
+                          <div className="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 border border-gray-100">
+                            <ShoppingBag size={18} className="text-gray-300" />
                           </div>
                           <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest">Nenhuma compra registrada</p>
                         </div>

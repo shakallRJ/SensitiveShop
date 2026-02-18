@@ -21,7 +21,7 @@ enum View {
   Sales = 'sales',
   Inventory = 'inventory',
   Customers = 'customers',
-  Analytics = 'analytics'
+  Financial = 'financial'
 }
 
 const App: React.FC = () => {
@@ -50,7 +50,7 @@ const App: React.FC = () => {
       case View.Sales: return <Sales />;
       case View.Inventory: return <Inventory />;
       case View.Customers: return <Customers />;
-      case View.Analytics: return <Analytics onBack={() => setCurrentView(View.Dashboard)} />;
+      case View.Financial: return <Analytics onBack={() => setCurrentView(View.Dashboard)} />;
       default: return <Dashboard onNavigate={(v) => setCurrentView(v as View)} />;
     }
   };
@@ -59,11 +59,15 @@ const App: React.FC = () => {
     <button
       onClick={() => setCurrentView(view)}
       className={`flex flex-col items-center justify-center w-full py-2 transition-all ${
-        currentView === view ? 'text-black' : 'text-gray-300'
+        currentView === view ? 'text-black' : 'text-purple-300'
       }`}
     >
-      <Icon size={20} strokeWidth={currentView === view ? 2.5 : 2} />
-      <span className="text-[9px] mt-1.5 font-black uppercase tracking-[0.2em]">{label}</span>
+      <div className={`p-2 rounded-2xl transition-all ${currentView === view ? 'bg-white shadow-sm' : ''}`}>
+        <Icon size={20} strokeWidth={currentView === view ? 2.5 : 2} />
+      </div>
+      <span className={`text-[9px] mt-1 font-black uppercase tracking-[0.2em] transition-all ${currentView === view ? 'opacity-100' : 'opacity-60'}`}>
+        {label}
+      </span>
     </button>
   );
 
@@ -73,7 +77,7 @@ const App: React.FC = () => {
         <div className="flex items-baseline gap-3">
           <span className="text-3xl font-serif-brand font-black text-black">S.</span>
           <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-1">
-            {currentView}
+            {currentView === View.Financial ? 'Análise Financeira' : currentView}
           </span>
         </div>
         <button 
@@ -91,7 +95,7 @@ const App: React.FC = () => {
         {renderView()}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-50 px-4 py-4 flex justify-around items-center z-30 max-w-md mx-auto shadow-[0_-15px_40px_rgba(0,0,0,0.04)]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-[#f8f5ff] border-t border-purple-100 px-4 py-4 flex justify-around items-center z-30 max-w-md mx-auto shadow-[0_-15px_40px_rgba(147,51,234,0.08)]">
         <NavItem view={View.Dashboard} icon={Home} label="Início" />
         <NavItem view={View.Sales} icon={ShoppingBag} label="Venda" />
         <NavItem view={View.Inventory} icon={Sparkles} label="Estoque" />

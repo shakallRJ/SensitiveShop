@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingBag, User, Package, DollarSign, Calendar, X, Search, Filter, Trash2, CreditCard, Banknote, QrCode } from 'lucide-react';
+import { Plus, ShoppingBag, User, Package, DollarSign, Calendar, X, Search, Filter, Trash2, CreditCard, Banknote, QrCode, ReceiptText, Printer, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Product, Customer, Sale } from '../types';
 
@@ -16,6 +16,9 @@ const Sales: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Receipt Modal State
+  const [selectedOrderItems, setSelectedOrderItems] = useState<Sale[] | null>(null);
 
   // Estado do Carrinho
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -47,6 +50,13 @@ const Sales: React.FC = () => {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleShowReceipt = (orderId: string) => {
+    const orderItems = sales.filter(s => s.order_id === orderId);
+    if (orderItems.length > 0) {
+      setSelectedOrderItems(orderItems);
     }
   };
 
@@ -84,7 +94,6 @@ const Sales: React.FC = () => {
       const orderId = crypto.randomUUID();
       const totalDiscount = parseFloat(formData.discount.replace(',', '.')) || 0;
       
-      // Proporção de desconto por item (simplificado para o BI não quebrar)
       const discountPerItem = cart.length > 0 ? totalDiscount / cart.length : 0;
 
       const salesPayload = cart.map(item => ({
@@ -102,7 +111,6 @@ const Sales: React.FC = () => {
       const { error: saleError } = await supabase.from('sales').insert(salesPayload);
       if (saleError) throw saleError;
 
-      // Baixa de estoque para cada item
       for (const item of cart) {
         await supabase.from('products').update({ stock: item.product.stock - item.amount }).eq('id', item.product.id);
       }
@@ -133,20 +141,21 @@ const Sales: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-3 px-1">
+      {/* Header com Botão Alinhado */}
+      <div className="flex items-stretch gap-3">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
           <input 
             type="text" 
             placeholder="Buscar nota ou cliente..."
-            className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold outline-none text-black focus:border-black transition-all"
+            className="w-full h-full bg-gray-50 border border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold outline-none text-black focus:border-black transition-all"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
         <button 
           onClick={() => setShowForm(!showForm)}
-          className={`w-14 h-14 rounded-2xl shadow-xl transition-all flex items-center justify-center ${showForm ? 'bg-white border border-gray-100 text-black' : 'bg-black text-white'}`}
+          className={`w-14 h-14 rounded-2xl shadow-xl transition-all flex items-center justify-center shrink-0 ${showForm ? 'bg-white border border-gray-100 text-black' : 'bg-black text-white'}`}
         >
           {showForm ? <X size={20} /> : <Plus size={24} />}
         </button>
@@ -168,7 +177,6 @@ const Sales: React.FC = () => {
               </select>
             </div>
 
-            {/* Seletor de Produtos para o Carrinho */}
             <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100 space-y-3">
               <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Adicionar Peças</label>
               <div className="flex gap-2">
@@ -196,7 +204,6 @@ const Sales: React.FC = () => {
                 </button>
               </div>
 
-              {/* Lista do Carrinho */}
               {cart.length > 0 && (
                 <div className="mt-4 space-y-2 max-h-40 overflow-y-auto no-scrollbar">
                   {cart.map((item, index) => (
@@ -205,7 +212,7 @@ const Sales: React.FC = () => {
                         <p className="text-[10px] font-black text-black uppercase truncate">{item.product.name}</p>
                         <p className="text-[9px] text-gray-400 font-bold">{item.amount}x R$ {item.product.price.toFixed(2)}</p>
                       </div>
-                      <button onClick={() => removeFromCart(index)} className="text-red-300 hover:text-red-500 transition-colors">
+                      <button type="button" onClick={() => removeFromCart(index)} className="text-red-300 hover:text-red-500 transition-colors">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -262,7 +269,11 @@ const Sales: React.FC = () => {
               <div className="p-20 text-center text-gray-300 text-[10px] font-black uppercase animate-pulse">Buscando Notas...</div>
             ) : filteredSales.length > 0 ? (
               filteredSales.map(sale => (
-                <div key={sale.id} className="p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                <div 
+                  key={sale.id} 
+                  onClick={() => handleShowReceipt(sale.order_id)}
+                  className="p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors cursor-pointer active:scale-[0.99]"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
                       <ShoppingBag size={20} />
@@ -282,6 +293,111 @@ const Sales: React.FC = () => {
             ) : (
               <div className="p-20 text-center text-gray-200 text-[10px] font-black uppercase tracking-widest">Nenhuma nota emitida</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* POP-UP NOTA FISCAL */}
+      {selectedOrderItems && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Design de Papel/Nota */}
+            <div className="border-t-8 border-black absolute top-0 left-0 right-0"></div>
+            
+            <button 
+              onClick={() => setSelectedOrderItems(null)}
+              className="absolute right-6 top-6 w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-black hover:text-white transition-all z-10"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="space-y-8 mt-4">
+              <div className="text-center space-y-2">
+                <h2 className="text-4xl font-serif-brand font-black text-black">S.</h2>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.5em]">Sensitive Shop</p>
+                <div className="flex items-center justify-center gap-2 text-[8px] font-black text-gray-300 uppercase tracking-widest pt-2">
+                  <div className="h-px w-8 bg-gray-100"></div>
+                  <span>Nota de Venda</span>
+                  <div className="h-px w-8 bg-gray-100"></div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between items-end">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Cliente</p>
+                  <p className="text-[9px] font-bold text-gray-300">{new Date(selectedOrderItems[0].created_at).toLocaleString('pt-BR')}</p>
+                </div>
+                <p className="text-sm font-black text-black uppercase tracking-tight">{selectedOrderItems[0].customer?.name}</p>
+              </div>
+
+              {/* Tabela de Itens */}
+              <div className="space-y-4">
+                <div className="border-y border-dashed border-gray-200 py-3 grid grid-cols-12 text-[8px] font-black text-gray-400 uppercase tracking-widest">
+                  <span className="col-span-6">Item</span>
+                  <span className="col-span-2 text-center">Qt</span>
+                  <span className="col-span-4 text-right">Subtotal</span>
+                </div>
+                
+                <div className="space-y-3">
+                  {selectedOrderItems.map((item, idx) => (
+                    <div key={idx} className="grid grid-cols-12 items-start text-[10px] font-bold text-black uppercase">
+                      <div className="col-span-6 leading-tight">
+                        {item.product?.name}
+                        <p className="text-[7px] text-gray-400 font-bold mt-0.5">Ref: {item.product?.reference_code || '---'}</p>
+                      </div>
+                      <span className="col-span-2 text-center font-black">{item.amount}</span>
+                      <span className="col-span-4 text-right font-black">R$ {Number(item.value).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-dashed border-gray-200 pt-4 space-y-2">
+                  <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    <span>Método</span>
+                    <span className="text-black font-black">{selectedOrderItems[0].payment_method}</span>
+                  </div>
+                  {selectedOrderItems[0].discount > 0 && (
+                    <div className="flex justify-between items-center text-[10px] font-bold text-red-400 uppercase tracking-widest">
+                      <span>Desconto Total</span>
+                      <span className="font-black">- R$ {(selectedOrderItems.reduce((acc, i) => acc + (i.discount || 0), 0)).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-xs font-black text-black uppercase tracking-widest">Total Geral</span>
+                    <span className="text-xl font-black text-black">
+                      R$ {selectedOrderItems.reduce((acc, i) => acc + Number(i.value), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center pt-4 space-y-4">
+                <p className="text-[8px] font-bold text-gray-300 uppercase leading-relaxed tracking-widest">
+                  Obrigado por escolher a Sensitive Shop.<br/>Sua beleza, nossa essência.
+                </p>
+                <div className="flex gap-2">
+                   <button 
+                    onClick={() => setSelectedOrderItems(null)}
+                    className="flex-1 bg-gray-50 text-gray-400 py-4 rounded-xl font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all"
+                  >
+                    Fechar
+                  </button>
+                  <button 
+                    onClick={() => window.print()}
+                    className="flex-1 bg-black text-white py-4 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
+                  >
+                    <Share2 size={12} /> Compartilhar
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Efeito de Serrilhado no fundo (opcional visual) */}
+            <div className="absolute -bottom-1 left-0 right-0 flex justify-between px-1 opacity-10">
+              {[...Array(20)].map((_, i) => (
+                <div key={i} className="w-4 h-4 bg-gray-200 transform rotate-45 -mb-2"></div>
+              ))}
+            </div>
           </div>
         </div>
       )}

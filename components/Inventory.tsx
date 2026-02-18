@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Search, Plus, X, Edit2, Save, Tag, Info, DollarSign, Package, Palette, Layers, ArrowRight, RefreshCcw } from 'lucide-react';
+import { Sparkles, Search, Plus, X, Edit2, Save, Tag, Info, DollarSign, Package, Palette, Layers, ArrowRight, RefreshCcw, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Product } from '../types';
 
@@ -111,7 +111,7 @@ const Inventory: React.FC = () => {
             }
             setSelectedProduct(null);
           }} 
-          className={`w-14 h-14 rounded-2xl shadow-xl transition-all flex items-center justify-center ${showForm ? 'bg-white text-black border border-gray-100' : 'bg-black text-white'}`}
+          className={`w-14 h-14 rounded-2xl shadow-xl transition-all flex items-center justify-center shrink-0 ${showForm ? 'bg-white text-black border border-gray-100' : 'bg-black text-white'}`}
         >
           {showForm ? <X size={24} /> : <Plus size={24} />}
         </button>
@@ -121,24 +121,24 @@ const Inventory: React.FC = () => {
         <form onSubmit={handleAddProduct} className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-2xl space-y-5 animate-in slide-in-from-top-4 duration-300">
           <div className="flex items-center justify-between">
             <h3 className="text-[10px] font-black text-black uppercase tracking-[0.3em]">
-              {isReplenishing ? 'Reposição de Estoque' : 'Cadastro Boutique'}
+              {isReplenishing ? 'Reposição Direta' : 'Cadastro Boutique'}
             </h3>
-            {isReplenishing ? <RefreshCcw size={16} className="text-emerald-500 animate-spin-slow" /> : <Tag size={16} className="text-indigo-400" />}
+            {isReplenishing ? <Lock size={16} className="text-gray-300" /> : <Tag size={16} className="text-indigo-400" />}
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Nome da Peça</label>
-              <input type="text" disabled={!!isReplenishing} placeholder="Ex: Conjunto Noir" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} required={!isReplenishing} />
+              <input type="text" readOnly={!!isReplenishing} placeholder="Ex: Conjunto Noir" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} required={!isReplenishing} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Ref. Interna</label>
-                <input type="text" disabled={!!isReplenishing} placeholder="REF-000" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.reference} onChange={e => setNewProduct({...newProduct, reference: e.target.value})} />
+                <input type="text" readOnly={!!isReplenishing} placeholder="REF-000" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.reference} onChange={e => setNewProduct({...newProduct, reference: e.target.value})} />
               </div>
               <div>
-                <label className="text-[8px] font-black text-indigo-400 uppercase tracking-widest ml-1 mb-1 block">Estoque Atual</label>
+                <label className="text-[8px] font-black text-indigo-400 uppercase tracking-widest ml-1 mb-1 block">Novo Estoque</label>
                 <input type="number" placeholder="0" className="w-full bg-white border-2 border-indigo-100 rounded-2xl py-4 px-6 text-xs font-black text-black outline-none ring-4 ring-indigo-50" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} required />
               </div>
             </div>
@@ -146,22 +146,22 @@ const Inventory: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Preço Compra</label>
-                <input type="text" disabled={!!isReplenishing} placeholder="R$ 0,00" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.purchase_price} onChange={e => setNewProduct({...newProduct, purchase_price: e.target.value})} required={!isReplenishing} />
+                <input type="text" readOnly={!!isReplenishing} placeholder="R$ 0,00" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.purchase_price} onChange={e => setNewProduct({...newProduct, purchase_price: e.target.value})} required={!isReplenishing} />
               </div>
               <div>
                 <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Preço Venda</label>
-                <input type="text" disabled={!!isReplenishing} placeholder="R$ 0,00" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} required={!isReplenishing} />
+                <input type="text" readOnly={!!isReplenishing} placeholder="R$ 0,00" className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} required={!isReplenishing} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Tamanho</label>
-                <input type="text" disabled={!!isReplenishing} placeholder="P, M, G..." className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.size} onChange={e => setNewProduct({...newProduct, size: e.target.value})} />
+                <input type="text" readOnly={!!isReplenishing} placeholder="P, M, G..." className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.size} onChange={e => setNewProduct({...newProduct, size: e.target.value})} />
               </div>
               <div>
                 <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Cor</label>
-                <input type="text" disabled={!!isReplenishing} placeholder="Preto, Nude..." className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.color} onChange={e => setNewProduct({...newProduct, color: e.target.value})} />
+                <input type="text" readOnly={!!isReplenishing} placeholder="Preto, Nude..." className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 text-xs font-bold text-black outline-none disabled:opacity-50" value={newProduct.color} onChange={e => setNewProduct({...newProduct, color: e.target.value})} />
               </div>
             </div>
           </div>
@@ -291,7 +291,7 @@ const Inventory: React.FC = () => {
                     reference: selectedProduct.reference_code || '',
                     purchase_price: selectedProduct.purchase_price.toString(),
                     price: selectedProduct.price.toString(),
-                    stock: selectedProduct.stock.toString(), // Inicia com o estoque atual para edição
+                    stock: selectedProduct.stock.toString(),
                     size: selectedProduct.size || '',
                     color: selectedProduct.color || ''
                   });
