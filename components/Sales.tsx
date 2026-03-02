@@ -188,31 +188,37 @@ const Sales: React.FC = () => {
               </select>
             </div>
 
-            <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100 space-y-3">
+            <div className="p-4 bg-gray-50 rounded-3xl border border-gray-100 space-y-4">
               <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Carrinho</label>
-              <div className="flex gap-2">
+              <div className="space-y-3">
                 <select 
-                  className="flex-1 bg-white border border-gray-200 rounded-xl py-3 px-4 text-xs font-bold text-black outline-none"
+                  className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 text-xs font-bold text-black outline-none"
                   value={selectedProductId}
                   onChange={e => setSelectedProductId(e.target.value)}
                 >
                   <option value="">Peça</option>
-                  {products.map(p => <option key={p.id} value={p.id} disabled={p.stock <= 0}>{p.name}</option>)}
+                  {products.map(p => <option key={p.id} value={p.id} disabled={p.stock <= 0}>{p.name} - {p.color} - {p.size} ({p.stock} un)</option>)}
                 </select>
-                <input 
-                  type="number" 
-                  className="w-16 bg-white border border-gray-200 rounded-xl py-3 px-2 text-xs font-bold text-black outline-none text-center"
-                  value={selectedProductQty}
-                  onChange={e => setSelectedProductQty(parseInt(e.target.value))}
-                  min="1"
-                />
-                <button 
-                  type="button"
-                  onClick={addToCart}
-                  className="bg-black text-white p-3 rounded-xl"
-                >
-                  <Plus size={18} />
-                </button>
+                
+                <div className="flex gap-3">
+                  <div className="flex-1 flex items-center bg-white border border-gray-200 rounded-xl px-4">
+                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest mr-3">Qtd</span>
+                    <input 
+                      type="number" 
+                      className="flex-1 bg-transparent py-3 text-xs font-bold text-black outline-none"
+                      value={selectedProductQty}
+                      onChange={e => setSelectedProductQty(parseInt(e.target.value))}
+                      min="1"
+                    />
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={addToCart}
+                    className="w-14 bg-black text-white rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
+                  >
+                    <Plus size={20} />
+                  </button>
+                </div>
               </div>
 
               {cart.length > 0 && (

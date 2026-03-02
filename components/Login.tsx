@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User, AlertCircle, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface LoginProps {
   onLogin: () => void;
@@ -10,17 +11,41 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const correctUser = 'admin';
-    const correctPassword = (import.meta as any).env?.VITE_APP_PASSWORD || 'admin123';
-    if (username === correctUser && password === correctPassword) {
-      localStorage.setItem('app_session', 'true');
-      onLogin();
-    } else {
-      setError(true);
-      setTimeout(() => setError(false), 2000);
+    setIsLoggingIn(true);
+    try {
+      const correctUser = 'admin';
+      
+      // Buscar senha global do Supabase
+      const { data, error: fetchError } = await supabase
+        .from('app_settings')
+        .select('password')
+        .eq('id', 'global')
+        .single();
+
+      const correctPassword = data?.password || (import.meta as any).env?.VITE_APP_PASSWORD || 'admin123';
+      
+      if (username === correctUser && password === correctPassword) {
+        localStorage.setItem('app_session', 'true');
+        onLogin();
+      } else {
+        setError(true);
+        setTimeout(() => setError(false), 2000);
+      }
+    } catch (err) {
+      console.error('Erro no login:', err);
+      // Fallback para senha padrão se houver erro de rede/banco
+      if (username === 'admin' && password === 'admin123') {
+        localStorage.setItem('app_session', 'true');
+        onLogin();
+      } else {
+        setError(true);
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -75,9 +100,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
           <button 
             type="submit" 
-            className="w-full bg-black text-white py-5 rounded-full font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all mt-8"
+            disabled={isLoggingIn}
+            className="w-full bg-black text-white py-5 rounded-full font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all mt-8 flex items-center justify-center gap-2"
           >
-            Entrar
+            {isLoggingIn ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Validando...
+              </>
+            ) : 'Entrar'}
           </button>
         </form>
       </div>

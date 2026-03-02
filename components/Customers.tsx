@@ -15,6 +15,10 @@ const Customers: React.FC = () => {
   
   // Estado para Edição
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [waTemplates, setWaTemplates] = useState({
+    default: 'Olá {name} ✨, temos novidades incríveis na boutique!',
+    birthday: 'Parabéns {name}! ✨ Notamos que é seu aniversário hoje e preparamos um cupom especial para você na Sensitive Shop! 🎁'
+  });
 
   const [newCustomer, setNewCustomer] = useState({
     name: '',
@@ -24,7 +28,29 @@ const Customers: React.FC = () => {
     birthday: ''
   });
 
-  useEffect(() => { fetchCustomers(); }, []);
+  useEffect(() => { 
+    fetchCustomers(); 
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('wa_message_template, wa_birthday_template')
+        .eq('id', 'global')
+        .single();
+      
+      if (data) {
+        setWaTemplates({
+          default: data.wa_message_template || waTemplates.default,
+          birthday: data.wa_birthday_template || waTemplates.birthday
+        });
+      }
+    } catch (e) {
+      console.error('Erro ao carregar templates:', e);
+    }
+  };
 
   const fetchCustomers = async () => {
     try {
@@ -111,9 +137,10 @@ const Customers: React.FC = () => {
 
   const openWhatsApp = (phone: string, name: string, isBirthday: boolean) => {
     const cleanPhone = phone.replace(/\D/g, '');
-    const msg = isBirthday 
-      ? `Parabéns ${name}! ✨ Notamos que é seu aniversário hoje e preparamos um cupom especial para você na Sensitive Shop! 🎁`
-      : `Olá ${name} ✨, temos novidades incríveis na boutique!`;
+    
+    const template = isBirthday ? waTemplates.birthday : waTemplates.default;
+    const msg = template.replace('{name}', name);
+    
     window.open(`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 

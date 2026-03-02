@@ -21,3 +21,16 @@ INSERT INTO public.expenses (description, amount, category, date) VALUES
 ('Aluguel Showroom', 1200.00, 'Fixo', CURRENT_DATE),
 ('Tráfego Pago Instagram', 450.00, 'Marketing', CURRENT_DATE),
 ('Embalagens de Luxo', 280.00, 'Variável', CURRENT_DATE);
+
+-- 5. Criar Tabela de Configurações Globais
+CREATE TABLE IF NOT EXISTS public.app_settings (
+  id TEXT PRIMARY KEY DEFAULT 'global',
+  password TEXT NOT NULL DEFAULT 'admin123',
+  wa_message_template TEXT DEFAULT 'Olá {name} ✨, temos novidades incríveis na boutique!',
+  wa_birthday_template TEXT DEFAULT 'Parabéns {name}! ✨ Notamos que é seu aniversário hoje e preparamos um cupom especial para você na Sensitive Shop! 🎁',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Inserir configuração inicial se não existir
+INSERT INTO public.app_settings (id) VALUES ('global') ON CONFLICT (id) DO NOTHING;
+ALTER TABLE public.app_settings DISABLE ROW LEVEL SECURITY;

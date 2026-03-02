@@ -7,7 +7,8 @@ import {
   UserRound, 
   LogOut,
   Wallet,
-  LayoutDashboard
+  LayoutDashboard,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { isSupabaseConfigured } from './lib/supabase';
 import Dashboard from './components/Dashboard';
@@ -17,6 +18,7 @@ import Customers from './components/Customers';
 import Login from './components/Login';
 import Analytics from './components/Analytics';
 import Expenses from './components/Expenses';
+import Settings from './components/Settings';
 
 enum View {
   Dashboard = 'dashboard',
@@ -24,7 +26,8 @@ enum View {
   Inventory = 'inventory',
   Customers = 'customers',
   Financial = 'financial',
-  Expenses = 'expenses'
+  Expenses = 'expenses',
+  Settings = 'settings'
 }
 
 const App: React.FC = () => {
@@ -55,6 +58,7 @@ const App: React.FC = () => {
       case View.Customers: return <Customers />;
       case View.Expenses: return <Expenses />;
       case View.Financial: return <Analytics onBack={() => setCurrentView(View.Dashboard)} />;
+      case View.Settings: return <Settings onBack={() => setCurrentView(View.Dashboard)} />;
       default: return <Dashboard onNavigate={(v) => setCurrentView(v as View)} />;
     }
   };
@@ -78,11 +82,19 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto shadow-2xl overflow-x-hidden">
       <header className="bg-white border-b border-gray-50 px-6 py-6 sticky top-0 z-20 flex justify-between items-center">
-        <div className="flex items-baseline gap-3">
-          <span className="text-3xl font-serif-brand font-black text-black">S.</span>
-          <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-1">
-            {currentView === View.Financial ? 'Analytics' : currentView}
-          </span>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setCurrentView(View.Settings)}
+            className={`p-2 rounded-xl transition-all ${currentView === View.Settings ? 'bg-black text-white' : 'text-gray-200 hover:text-black'}`}
+          >
+            <SettingsIcon size={18} />
+          </button>
+          <div className="flex items-baseline gap-3">
+            <span className="text-3xl font-serif-brand font-black text-black">S.</span>
+            <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-1">
+              {currentView === View.Financial ? 'Analytics' : currentView}
+            </span>
+          </div>
         </div>
         <button 
           onClick={() => {

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, X, Trash2, Calendar, Clock, AlertTriangle, Zap, ShoppingBag, Info, DollarSign, Tag, Layers, ArrowRight, RefreshCcw } from 'lucide-react';
+import { Search, Plus, X, Trash2, Calendar, Clock, AlertTriangle, Zap, ShoppingBag, Info, DollarSign, Tag, Layers, ArrowRight, RefreshCcw, Edit2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Product } from '../types';
 
@@ -24,6 +24,7 @@ const Inventory: React.FC = () => {
   // Estados de Modais
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -51,7 +52,7 @@ const Inventory: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('products').insert([{
+      const payload = {
         name: newProduct.name.trim(),
         reference_code: newProduct.reference.trim().toUpperCase(),
         purchase_price: parseFloat(newProduct.purchase_price.toString().replace(',', '.')),
@@ -61,14 +62,39 @@ const Inventory: React.FC = () => {
         color: newProduct.color.trim(),
         purchase_date: newProduct.purchase_date,
         expected_days: parseInt(newProduct.expected_days.toString()) || 30
-      }]);
-      
-      if (error) throw error;
+      };
+
+      if (editingProduct) {
+        const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('products').insert([payload]);
+        if (error) throw error;
+      }
       
       setNewProduct({ name:'', reference:'', purchase_price:'', price:'', stock:'', size:'', color:'', purchase_date: new Date().toISOString().split('T')[0], expected_days: '30' });
       setShowForm(false);
+      setEditingProduct(null);
       fetchProducts();
     } catch (e) { console.error(e); } finally { setIsSaving(false); }
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name,
+      reference: product.reference_code || '',
+      purchase_price: product.purchase_price.toString(),
+      price: product.price.toString(),
+      stock: product.stock.toString(),
+      size: product.size || '',
+      color: product.color || '',
+      purchase_date: product.purchase_date || new Date().toISOString().split('T')[0],
+      expected_days: (product.expected_days || 30).toString()
+    });
+    setSelectedProduct(null);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleReposition = (product: Product) => {
@@ -179,10 +205,10 @@ const Inventory: React.FC = () => {
 
               <div className="flex gap-3 pt-2">
                 <button 
-                  onClick={() => setSelectedProduct(null)}
-                  className="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                  onClick={() => handleEdit(selectedProduct)}
+                  className="flex-1 bg-gray-100 text-gray-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
-                  Fechar
+                  <Edit2 size={14} /> Editar
                 </button>
                 <button 
                   onClick={() => handleReposition(selectedProduct)}
@@ -255,7 +281,13 @@ const Inventory: React.FC = () => {
           />
         </div>
         <button 
-          onClick={() => setShowForm(!showForm)} 
+          onClick={() => {
+            if (showForm) {
+              setEditingProduct(null);
+              setNewProduct({ name:'', reference:'', purchase_price:'', price:'', stock:'', size:'', color:'', purchase_date: new Date().toISOString().split('T')[0], expected_days: '30' });
+            }
+            setShowForm(!showForm);
+          }} 
           className={`w-14 h-14 rounded-2xl shadow-xl transition-all flex items-center justify-center shrink-0 ${showForm ? 'bg-white text-black border border-gray-100' : 'bg-black text-white'}`}
         >
           {showForm ? <X size={24} /> : <Plus size={24} />}
@@ -265,8 +297,10 @@ const Inventory: React.FC = () => {
       {showForm && (
         <form onSubmit={handleAddProduct} className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-2xl space-y-5 animate-in slide-in-from-top-4 duration-300">
           <div className="flex justify-between items-center">
-            <h3 className="text-[10px] font-black text-black uppercase tracking-[0.3em]">Cadastro de Variante</h3>
-            {newProduct.name && (
+            <h3 className="text-[10px] font-black text-black uppercase tracking-[0.3em]">
+              {editingProduct ? 'Editar Variante' : 'Cadastro de Variante'}
+            </h3>
+            {newProduct.name && !editingProduct && (
               <span className="text-[8px] font-black bg-purple-100 text-purple-600 px-2 py-1 rounded-md uppercase tracking-widest">Modo Reposição</span>
             )}
           </div>
@@ -304,11 +338,15 @@ const Inventory: React.FC = () => {
           </div>
 
           <div className="flex gap-2">
-            {newProduct.name && (
-               <button type="button" onClick={() => setNewProduct({ name:'', reference:'', purchase_price:'', price:'', stock:'', size:'', color:'', purchase_date: new Date().toISOString().split('T')[0], expected_days: '30' })} className="px-6 bg-gray-100 rounded-2xl text-gray-400"><X size={18}/></button>
+            {(newProduct.name || editingProduct) && (
+               <button type="button" onClick={() => {
+                 setEditingProduct(null);
+                 setNewProduct({ name:'', reference:'', purchase_price:'', price:'', stock:'', size:'', color:'', purchase_date: new Date().toISOString().split('T')[0], expected_days: '30' });
+                 setShowForm(false);
+               }} className="px-6 bg-gray-100 rounded-2xl text-gray-400"><X size={18}/></button>
             )}
             <button type="submit" disabled={isSaving} className="flex-1 bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl active:scale-[0.98] transition-all">
-              {isSaving ? 'Gravando...' : 'Salvar no Conjunto'}
+              {isSaving ? 'Gravando...' : editingProduct ? 'Salvar Alterações' : 'Salvar no Conjunto'}
             </button>
           </div>
         </form>
@@ -322,8 +360,8 @@ const Inventory: React.FC = () => {
             <div key={group.ref} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
               <div className="bg-gray-50 px-6 py-4 flex justify-between items-center border-b border-gray-100">
                 <div>
-                  <p className="text-xs font-black text-black uppercase tracking-tight">{group.name}</p>
-                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">REF: {group.ref}</p>
+                  <p className="text-xs font-black text-black uppercase tracking-tight">{group.ref}</p>
+                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{group.name}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] font-black text-gray-300 uppercase">Total Peças</p>
